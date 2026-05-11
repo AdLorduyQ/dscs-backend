@@ -16,3 +16,16 @@ model User {
 
   @@map("users")
 }
+
+model Server {
+  id     Int    @id @default(autoincrement())
+  nombre String
+  ip     String
+  estado String
+  cpu    Float
+  ram    Float
+  disco  Float
+  red    Float
+
+  @@map("servers")
+}
