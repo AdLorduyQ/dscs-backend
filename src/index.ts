@@ -17,6 +17,7 @@ import { AlertService } from './core/services/alert.service';
 import { AlertController } from './infrastructure/controllers/alert.controller';
 import { createServer } from 'http';
 import { SocketIoService } from './infrastructure/websockets/socket.io.service';
+import { MonitoringService } from './core/services/monitoring.service';
 
 const app = express();
 const httpServer = createServer(app);
@@ -40,6 +41,14 @@ const alertRepo = new PrismaAlertRepository();
 const alertService = new AlertService(alertRepo);
 const alertController = new AlertController(alertService);
 const webSocketService = new SocketIoService(httpServer);
+const monitoringService = new MonitoringService(
+  serverRepository,
+  configRepo,
+  alertService,
+  webSocketService
+);
+
+monitoringService.startMonitoring();
 
 
 app.post('/api/auth/login', authController.login);
