@@ -15,8 +15,11 @@ import { ConfigController } from './infrastructure/controllers/config.controller
 import { PrismaAlertRepository } from './infrastructure/repositories/prismaAlert.repository';
 import { AlertService } from './core/services/alert.service';
 import { AlertController } from './infrastructure/controllers/alert.controller';
+import { createServer } from 'http';
+import { SocketIoService } from './infrastructure/websockets/socket.io.service';
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = 3000;
 
 app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
@@ -36,6 +39,8 @@ const configController = new ConfigController(configService);
 const alertRepo = new PrismaAlertRepository();
 const alertService = new AlertService(alertRepo);
 const alertController = new AlertController(alertService);
+const webSocketService = new SocketIoService(httpServer);
+
 
 app.post('/api/auth/login', authController.login);
 app.get('/api/servers', serverController.getAll);
@@ -48,6 +53,7 @@ app.get('/api/servers/:serverId/alerts', alertController.getAlerts);
 app.get('/api/servers/:id/alerts/active', alertController.getActiveAlerts);
 app.patch('/api/alerts/:id/resolve', alertController.resolveAlert);
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Backend de Observabilidad K8s corriendo en http://localhost:${PORT}`);
+  console.log(`WebSockets habilitados y escuchando`);
 });
