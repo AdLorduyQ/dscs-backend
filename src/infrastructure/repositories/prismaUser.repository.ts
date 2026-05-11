@@ -6,13 +6,7 @@ export class PrismaUserRepository implements IUserRepository {
   private prisma: PrismaClient;
 
   constructor() {
-    this.prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
-    });
+    this.prisma = new PrismaClient()
   }
 
   private mapToEntity(prismaUser: any): UserEntity {

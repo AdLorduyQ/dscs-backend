@@ -12,6 +12,9 @@ import { PrismaConfigRepository } from './infrastructure/repositories/prismaConf
 import { PrismaChangelogRepository } from './infrastructure/repositories/prismaChangelog.repository';
 import { ConfigService } from './core/services/config.service';
 import { ConfigController } from './infrastructure/controllers/config.controller';
+import { PrismaAlertRepository } from './infrastructure/repositories/prismaAlert.repository';
+import { AlertService } from './core/services/alert.service';
+import { AlertController } from './infrastructure/controllers/alert.controller';
 
 const app = express();
 const PORT = 3000;
@@ -30,6 +33,9 @@ const configRepo = new PrismaConfigRepository();
 const changelogRepo = new PrismaChangelogRepository();
 const configService = new ConfigService(configRepo, changelogRepo);
 const configController = new ConfigController(configService);
+const alertRepo = new PrismaAlertRepository();
+const alertService = new AlertService(alertRepo);
+const alertController = new AlertController(alertService);
 
 app.post('/api/auth/login', authController.login);
 app.get('/api/servers', serverController.getAll);
@@ -38,6 +44,9 @@ app.get('/api/servers/:id/usage', serverController.getUsage);
 app.get('/api/config', configController.getConfig);
 app.put('/api/config', configController.updateConfig);
 app.get('/api/changelog', configController.getChangelogs);
+app.get('/api/servers/:serverId/alerts', alertController.getAlerts);
+app.get('/api/servers/:id/alerts/active', alertController.getActiveAlerts);
+app.patch('/api/alerts/:id/resolve', alertController.resolveAlert);
 
 app.listen(PORT, () => {
   console.log(`Backend de Observabilidad K8s corriendo en http://localhost:${PORT}`);

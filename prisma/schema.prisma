@@ -27,6 +27,7 @@ model Server {
   ram    Float
   disco  Float
   red    Float
+  alerts Alert[]
 
   @@map("servers")
 }
@@ -52,4 +53,24 @@ model Changelog {
   user        User     @relation(fields: [id_usuario], references: [id_usuario])
 
   @@map("changelogs")
+}
+
+model Alert {
+  id         String    @id @default(uuid())
+  serverId   Int
+  server     Server    @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  
+  tipo       String    // 'CRITICAL' | 'WARNING' | 'INFO'
+  recurso    String    // 'CPU' | 'RAM' | 'DISCO' | 'RED' |
+  mensaje    String
+  
+  valor      Float?
+  umbral     Float?
+  
+  timestamp  DateTime  @default(now())
+  
+  resuelto   Boolean   @default(false)
+  resueltoEn DateTime?
+
+  @@map("alerts")
 }
