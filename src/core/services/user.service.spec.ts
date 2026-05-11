@@ -67,4 +67,55 @@ describe('UserService', () => {
       expect(result.idUsuario).toBe(1);
     });
   });
+
+  describe('validateCredentials', () => {
+    it('debería arrojar un error si el correo no existe', async () => {
+      // Arrange
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(userService.validateCredentials('falso@test.com', '123'))
+        .rejects.toThrow('Credenciales inválidas');
+    });
+
+    it('debería arrojar un error si la contraseña es incorrecta', async () => {
+      // Arrange
+      const existingUser = new UserEntity({
+        idUsuario: 1,
+        nombre: 'Admin',
+        correo: 'admin@test.com',
+        contrasena: 'hashed_password',
+        rol: UserRole.Admin,
+      });
+
+      mockUserRepository.findByEmail.mockResolvedValue(existingUser);
+      (CryptoUtil.comparePassword as jest.Mock).mockResolvedValue(false);
+
+      // Act & Assert
+      await expect(userService.validateCredentials('admin@test.com', 'wrong_pass'))
+        .rejects.toThrow('Credenciales inválidas');
+    });
+
+    it('debería devolver el usuario si las credenciales son correctas', async () => {
+      // Arrange
+      const existingUser = new UserEntity({
+        idUsuario: 1,
+        nombre: 'Admin',
+        correo: 'admin@test.com',
+        contrasena: 'hashed_password',
+        rol: UserRole.Admin,
+      });
+
+      mockUserRepository.findByEmail.mockResolvedValue(existingUser);
+      (CryptoUtil.comparePassword as jest.Mock).mockResolvedValue(true);
+
+      // Act
+      const result = await userService.validateCredentials('admin@test.com', 'correct_pass');
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.idUsuario).toBe(1);
+      expect(result.correo).toBe('admin@test.com');
+    });
+  });
 });

@@ -20,4 +20,19 @@ export class UserService {
 
     return await this.userRepository.create(userToSave);
   }
+
+  async validateCredentials(correo: string, contrasenaPlana: string): Promise<UserEntity> {
+    const user = await this.userRepository.findByEmail(correo);
+    if (!user) {
+      throw new Error('Credenciales inválidas');
+    }
+
+    const isPasswordValid = await CryptoUtil.comparePassword(contrasenaPlana, user.contrasena);
+    
+    if (!isPasswordValid) {
+      throw new Error('Credenciales inválidas');
+    }
+
+    return user;
+  }
 }
