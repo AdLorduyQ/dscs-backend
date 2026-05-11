@@ -13,6 +13,7 @@ model User {
   correo     String @unique
   contrasena String @map("contraseña")
   rol        Int
+  changelogs Changelog[]
 
   @@map("users")
 }
@@ -28,4 +29,27 @@ model Server {
   red    Float
 
   @@map("servers")
+}
+
+model Config {
+  id                 Int   @id @default(1)
+  cpuThreshold       Float
+  ramThreshold       Float
+  monitoringInterval Int
+
+  @@map("config")
+}
+
+model Changelog {
+  id          Int      @id @default(autoincrement())
+  descripcion String
+  tipo        Int
+  old         Json?
+  new         Json?
+  fecha       DateTime @default(now())
+  
+  id_usuario  Int
+  user        User     @relation(fields: [id_usuario], references: [id_usuario])
+
+  @@map("changelogs")
 }

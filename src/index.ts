@@ -8,6 +8,10 @@ import { AuthController } from './infrastructure/controllers/auth.controller';
 import { PrismaServerRepository } from './infrastructure/repositories/prismaServer.repository';
 import { ServerService } from './core/services/server.service';
 import { ServerController } from './infrastructure/controllers/server.controller';
+import { PrismaConfigRepository } from './infrastructure/repositories/prismaConfig.repository';
+import { PrismaChangelogRepository } from './infrastructure/repositories/prismaChangelog.repository';
+import { ConfigService } from './core/services/config.service';
+import { ConfigController } from './infrastructure/controllers/config.controller';
 
 const app = express();
 const PORT = 3000;
@@ -22,12 +26,18 @@ const authController = new AuthController(authService);
 const serverRepository = new PrismaServerRepository();
 const serverService = new ServerService(serverRepository);
 const serverController = new ServerController(serverService);
+const configRepo = new PrismaConfigRepository();
+const changelogRepo = new PrismaChangelogRepository();
+const configService = new ConfigService(configRepo, changelogRepo);
+const configController = new ConfigController(configService);
 
 app.post('/api/auth/login', authController.login);
 app.get('/api/servers', serverController.getAll);
 app.post('/api/servers', serverController.create);
 app.get('/api/servers/:id/usage', serverController.getUsage);
-
+app.get('/api/config', configController.getConfig);
+app.put('/api/config', configController.updateConfig);
+app.get('/api/changelog', configController.getChangelogs);
 
 app.listen(PORT, () => {
   console.log(`Backend de Observabilidad K8s corriendo en http://localhost:${PORT}`);
