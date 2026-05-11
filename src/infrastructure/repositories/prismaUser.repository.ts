@@ -7,7 +7,11 @@ export class PrismaUserRepository implements IUserRepository {
 
   constructor() {
     this.prisma = new PrismaClient({
-      url: process.env.DATABASE_URL
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
     });
   }
 
