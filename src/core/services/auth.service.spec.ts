@@ -1,6 +1,7 @@
 import { AuthService } from './auth.service';
 import { UserService } from './user.service';
 import { UserEntity } from '../entities/user.entity';
+import { UserPublicEntity } from '../entities/userPublic.entity';
 import { UserRole } from '../../enums/userRole.enum';
 import { JwtUtil } from '../../utils/jwt.util';
 
@@ -13,6 +14,14 @@ describe('AuthService', () => {
   beforeEach(() => {
     mockUserService = {
       validateCredentials: jest.fn(),
+      toPublicEntity: jest.fn((u: UserEntity) =>
+        new UserPublicEntity({
+          id_usuario: u.idUsuario!,
+          nombre: u.nombre,
+          correo: u.correo,
+          rol: u.rol,
+        })
+      ),
     };
 
     authService = new AuthService(mockUserService as UserService);
@@ -50,6 +59,7 @@ describe('AuthService', () => {
       
       expect(result.token).toBe('fake_jwt_token');
       expect(result.user.correo).toBe('admin@test.com');
+      expect(result.user).toBeInstanceOf(UserPublicEntity);
       expect(result.user).not.toHaveProperty('contrasena'); 
     });
   });

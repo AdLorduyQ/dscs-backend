@@ -18,6 +18,7 @@ import { AlertController } from './infrastructure/controllers/alert.controller';
 import { createServer } from 'http';
 import { SocketIoService } from './infrastructure/websockets/socket.io.service';
 import { MonitoringService } from './core/services/monitoring.service';
+import { UserController } from './infrastructure/controllers/user.controller';
 
 const app = express();
 const httpServer = createServer(app);
@@ -47,6 +48,8 @@ const monitoringService = new MonitoringService(
   alertService,
   webSocketService
 );
+const userController = new UserController(userService);
+
 
 monitoringService.startMonitoring();
 
@@ -61,6 +64,9 @@ app.get('/api/changelog', configController.getChangelogs);
 app.get('/api/servers/:serverId/alerts', alertController.getAlerts);
 app.get('/api/servers/:id/alerts/active', alertController.getActiveAlerts);
 app.patch('/api/alerts/:id/resolve', alertController.resolveAlert);
+app.get('/api/auth/me', authController.me);
+app.get('/api/users', userController.getAll);
+app.get('/api/users/:id', userController.getById);
 
 httpServer.listen(PORT, () => {
   console.log(`Backend de Observabilidad K8s corriendo en http://localhost:${PORT}`);
