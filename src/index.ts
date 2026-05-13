@@ -68,6 +68,16 @@ app.get('/api/auth/me', authController.me);
 app.get('/api/users', userController.getAll);
 app.get('/api/users/:id', userController.getById);
 
+
+app.post('/api/test/trigger-alert', async (req, res) => {
+  try {
+    await monitoringService.sendSlackNotification('CPU', 'test-node', 85, 80);
+    res.json({ success: true, message: 'Slack notification sent' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 httpServer.listen(PORT, () => {
   console.log(`Backend de Observabilidad K8s corriendo en http://localhost:${PORT}`);
   console.log(`WebSockets habilitados y escuchando`);

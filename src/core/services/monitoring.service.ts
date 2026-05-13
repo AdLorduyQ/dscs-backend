@@ -4,10 +4,12 @@ import { IConfigRepository } from '../../interfaces/repositories/iConfigReposito
 import { AlertService } from './alert.service';
 import { IWebSocketService } from '../../interfaces/services/iWebSocketService.interface';
 import { AlertEntity } from '../entities/alert.entity';
+import { SlackUtil } from '../../utils/slack.util';
 
 export class MonitoringService {
   private k8sApi: k8s.CoreV1Api;
   private metricsClient: k8s.CustomObjectsApi;
+  private activeAlerts = new Set<string>();
 
   constructor(
     private readonly serverRepo: IServerRepository,
@@ -68,10 +70,23 @@ export class MonitoringService {
         console.log(`[K8s] Nodo: ${nodeName} | CPU: ${cpuPercent}% | RAM: ${ramPercent}%`);
 
         if (cpuPercent >= config.cpuThreshold) {
-          await this.triggerAlert(1, nodeName, 'CPU', cpuPercent, config.cpuThreshold);
+          const key = `${nodeName}-CPU`;
+          if (!this.activeAlerts.has(key)) {
+            this.activeAlerts.add(key);
+            await this.triggerAlert(1, nodeName, 'CPU', cpuPercent, config.cpuThreshold);
+          }
+        } else {
+          this.activeAlerts.delete(`${nodeName}-CPU`);
         }
+
         if (ramPercent >= config.ramThreshold) {
-          await this.triggerAlert(1, nodeName, 'RAM', ramPercent, config.ramThreshold);
+          const key = `${nodeName}-RAM`;
+          if (!this.activeAlerts.has(key)) {
+            this.activeAlerts.add(key);
+            await this.triggerAlert(1, nodeName, 'RAM', ramPercent, config.ramThreshold);
+          }
+        } else {
+          this.activeAlerts.delete(`${nodeName}-RAM`);
         }
       }
     } catch (error: any) {
@@ -96,7 +111,15 @@ export class MonitoringService {
 
     const savedAlert = await this.alertService.createAlert(alert);
     this.webSocketService.emitAlert(savedAlert);
+
+    await this.sendSlackNotification(recurso, serverName, valor, umbral);
   }
+
+  async sendSlackNotification(recurso: 'CPU' | 'RAM', serverName: string, valor: number, umbral: number) {
+    console.log(`[Slack] Notificación enviada: ${recurso} en ${serverName}`);
+    await SlackUtil.send(`⚠️ ALERTA CRÍTICA: ${recurso} en ${valor}% (Límite: ${umbral}%) - Nodo: ${serverName}`);
+  }
+
 }
 // TODO ?? SLACK & Telegram notf
 // TODO disk y red se pueden sacar por prometheus, investigando... , por K8S solo se expone cpu y ram. 

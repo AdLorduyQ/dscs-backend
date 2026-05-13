@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AlertService } from '../../core/services/alert.service';
+import { SlackUtil } from '../../utils/slack.util';
 
 export class AlertController {
   constructor(private readonly alertService: AlertService) {}
@@ -30,6 +31,7 @@ export class AlertController {
     try {
       const id = req.params.id as string; // UUID
       const resolved = await this.alertService.resolveAlert(id);
+      await SlackUtil.send(`✅ ALERTA RESUELTA: ${resolved.recurso} en ${resolved.mensaje.match(/de (.+?) está/)?.[1] ?? 'nodo'} fue resuelta`);
       res.status(200).json(resolved);
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
