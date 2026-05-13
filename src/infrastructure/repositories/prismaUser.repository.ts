@@ -38,9 +38,31 @@ export class PrismaUserRepository implements IUserRepository {
     return this.mapToEntity(newUser);
   }
 
-  // TODO Implementar el resto para el CRUD de usuarios (findById, update, delete, findAll)
-  async findById(id: number): Promise<UserEntity | null> { return null; }
-  async update(id: number, user: Partial<UserEntity>): Promise<UserEntity> { return new UserEntity({}); }
-  async delete(id: number): Promise<void> {}
-  async findAll(): Promise<UserEntity[]> { return []; }
+  async findById(id: number): Promise<UserEntity | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id_usuario: id },
+    });
+    return user ? this.mapToEntity(user) : null;
+  }
+  async update(id: number, user: Partial<UserEntity>): Promise<UserEntity> {
+    const updated = await this.prisma.user.update({
+      where: { id_usuario: id },
+      data: {
+        ...(user.nombre !== undefined && { nombre: user.nombre }),
+        ...(user.correo !== undefined && { correo: user.correo }),
+        ...(user.contrasena !== undefined && { contrasena: user.contrasena }),
+        ...(user.rol !== undefined && { rol: user.rol }),
+      },
+    });
+    return this.mapToEntity(updated);
+  }
+  async delete(id: number): Promise<void> {
+    await this.prisma.user.delete({ where: { id_usuario: id } });
+  }
+  async findAll(): Promise<UserEntity[]> {
+    const users = await this.prisma.user.findMany({
+      orderBy: { id_usuario: 'asc' },
+    });
+    return users.map((u) => this.mapToEntity(u));
+  }
 }

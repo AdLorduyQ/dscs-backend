@@ -16,8 +16,8 @@ Backend API for a real-time observability and monitoring system for Kubernetes n
 
 ## Prerequisites
 To run this project locally, you need to have installed:
-1. Node.js (v18 or higher)
-2. PostgreSQL (Local or using Docker)
+1. [Node.js](https://nodejs.org/) (v18 or higher)
+2. [PostgreSQL](https://www.postgresql.org/) (Local or using Docker)
 3. **(Optional but recommended)** Docker Desktop with Kubernetes enabled and the `metrics-server` installed for real data ingestion.
 
 ---
