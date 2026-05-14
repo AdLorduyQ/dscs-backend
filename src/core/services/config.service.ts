@@ -3,6 +3,7 @@ import { ChangelogEntity } from '../entities/changelog.entity';
 import { IConfigRepository } from '../../interfaces/repositories/iConfigRepository.interface';
 import { IChangelogRepository } from '../../interfaces/repositories/iChangelogRepository.interface';
 import { ChangelogType } from '../../enums/changelogType.enum';
+import { SlackUtil } from '../../utils/slack.util';
 
 export class ConfigService {
   constructor(
@@ -31,6 +32,7 @@ export class ConfigService {
         new: { cpuThreshold: newData.cpuThreshold },
         id_usuario: userId
       }));
+      await SlackUtil.send(`⚙️ CONFIGURACIÓN ACTUALIZADA: Umbral de CPU cambió de ${oldConfig.cpuThreshold}% a ${newData.cpuThreshold}%`);
     }
 
     if (newData.ramThreshold && newData.ramThreshold !== oldConfig.ramThreshold) {
@@ -41,6 +43,7 @@ export class ConfigService {
         new: { ramThreshold: newData.ramThreshold },
         id_usuario: userId
       }));
+      await SlackUtil.send(`⚙️ CONFIGURACIÓN ACTUALIZADA: Umbral de RAM cambió de ${oldConfig.ramThreshold}% a ${newData.ramThreshold}%`);
     }
 
     return updatedConfig;

@@ -4,6 +4,7 @@ import { IConfigRepository } from '../../interfaces/repositories/iConfigReposito
 import { AlertService } from './alert.service';
 import { IWebSocketService } from '../../interfaces/services/iWebSocketService.interface';
 import { AlertEntity } from '../entities/alert.entity';
+import { SlackUtil } from '../../utils/slack.util';
 import axios from 'axios';
 
 interface NodeMetrics {
@@ -16,6 +17,7 @@ interface NodeMetrics {
 export class MonitoringService {
   private k8sApi: k8s.CoreV1Api;
   private metricsClient: k8s.CustomObjectsApi;
+  private activeAlerts = new Set<string>();
   private metricsCache: Map<string, NodeMetrics> = new Map();
 
   constructor(
@@ -91,10 +93,23 @@ export class MonitoringService {
 
         if (serverId) {
           if (cpuPercent >= config.cpuThreshold) {
-            await this.triggerAlert(serverId, nodeName, 'CPU', cpuPercent, config.cpuThreshold);
+            const key = `${nodeName}-CPU`;
+            if (!this.activeAlerts.has(key)) {
+              this.activeAlerts.add(key);
+              await this.triggerAlert(serverId, nodeName, 'CPU', cpuPercent, config.cpuThreshold);
+            }
+          } else {
+            this.activeAlerts.delete(`${nodeName}-CPU`);
           }
+
           if (ramPercent >= config.ramThreshold) {
-            await this.triggerAlert(serverId, nodeName, 'RAM', ramPercent, config.ramThreshold);
+            const key = `${nodeName}-RAM`;
+            if (!this.activeAlerts.has(key)) {
+              this.activeAlerts.add(key);
+              await this.triggerAlert(serverId, nodeName, 'RAM', ramPercent, config.ramThreshold);
+            }
+          } else {
+            this.activeAlerts.delete(`${nodeName}-RAM`);
           }
         } else {
           console.warn(`[K8s Monitor] No se pudo validar alertas: El nodo ${nodeName} no retornó un ID válido en la BD.`);
@@ -245,7 +260,15 @@ export class MonitoringService {
 
     const savedAlert = await this.alertService.createAlert(alert);
     this.webSocketService.emitAlert(savedAlert);
+
+    await this.sendSlackNotification(recurso, serverName, valor, umbral);
   }
+
+  async sendSlackNotification(recurso: 'CPU' | 'RAM', serverName: string, valor: number, umbral: number) {
+    console.log(`[Slack] Notificación enviada: ${recurso} en ${serverName}`);
+    await SlackUtil.send(`⚠️ ALERTA CRÍTICA: ${recurso} en ${valor}% (Límite: ${umbral}%) - Nodo: ${serverName}`);
+  }
+
 }
 // TODO ?? SLACK & Telegram notf
 // Métricas de disco y red usan valores estimados en Docker Desktop

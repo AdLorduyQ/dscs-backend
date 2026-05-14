@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UserService } from '../../core/services/user.service';
 import { UserRole } from '../../enums/userRole.enum';
+import { SlackUtil } from '../../utils/slack.util';
 
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -60,6 +61,7 @@ export class UserController {
         rol: this.parseRolFromBody(body),
         plainPassword: this.readPlainPasswordFromBody(body),
       });
+      await SlackUtil.send(`👤 USUARIO ACTUALIZADO: ${user.correo} fue modificado en el sistema`);
       res.status(200).json(user);
     } catch (error: any) {
       if (this.isUnauthorizedError(error.message)) {
@@ -90,7 +92,9 @@ export class UserController {
         return;
       }
 
+      const deletedUser = await this.userService.getUserForApiById(req.headers.authorization, id);
       await this.userService.deleteUserForApi(req.headers.authorization, id);
+      await SlackUtil.send(`🗑️ USUARIO ELIMINADO: ${deletedUser.correo} fue eliminado del sistema`);
       res.status(204).send();
     } catch (error: any) {
       if (this.isUnauthorizedError(error.message)) {
