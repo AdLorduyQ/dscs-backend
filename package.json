@@ -6,7 +6,9 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watchAll",
-    "start:dev": "ts-node src/index.ts"
+    "start:dev": "ts-node src/index.ts",
+    "hash-password": "ts-node scripts/hash-password.ts",
+    "create-user": "ts-node scripts/create-user.ts"
   },
   "keywords": [],
   "author": "",
