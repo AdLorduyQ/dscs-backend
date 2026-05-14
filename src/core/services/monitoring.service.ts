@@ -106,42 +106,42 @@ export class MonitoringService {
   }
 
   private async getDiskAndNetworkMetrics(nodeName: string): Promise<{ discoPercent: number; redPercent: number }> {
-    try {
-      const nodeList = await this.k8sApi.listNode();
-      const node = nodeList.items.find((n: any) => n.metadata.name === nodeName);
-      
-      if (!node || !node.status?.addresses) {
-        console.warn(`[K8s Monitor] No se encontró información de dirección para el nodo ${nodeName}`);
-        return { discoPercent: 0, redPercent: 0 };
-      }
+  try {
+    const promUrl = 'http://localhost:9090/api/v1/query';
+    const diskQuery = `max(100 - (node_filesystem_avail_bytes / node_filesystem_size_bytes * 100))`;
+    const netQuery = `rate(node_network_receive_bytes_total[1m])`;
 
-      const nodeIP = node.status.addresses.find((addr: any) => addr.type === 'InternalIP')?.address;
-      
-      if (!nodeIP) {
-        console.warn(`[K8s Monitor] No se encontró IP interna para el nodo ${nodeName}`);
-        return { discoPercent: 0, redPercent: 0 };
-      }
+    const [diskRes, netRes] = await Promise.all([
+      axios.get(promUrl, { params: { query: diskQuery } }),
+      axios.get(promUrl, { params: { query: netQuery } })
+    ]);
 
-      const kubeletPort = 10255;
-      const metricsUrl = `http://${nodeIP}:${kubeletPort}/metrics`;
-      
-      try {
-        const response = await axios.get(metricsUrl, { timeout: 5000 });
-        const metricsText = response.data;
-        
-        const discoPercent = this.parseDiskMetrics(metricsText);
-        const redPercent = this.parseNetworkMetrics(metricsText);
-        
-        return { discoPercent, redPercent };
-      } catch (kubeletError) {
-        console.warn(`[K8s Monitor] No se pudo acceder a kubelet en ${nodeIP}:${kubeletPort}. Usando valores estimados (desarrollo).`);
-        return { discoPercent: 50, redPercent: 30 };
-      }
-    } catch (error) {
-      console.error(`[K8s Monitor] Error obteniendo métricas de disco/red para ${nodeName}:`, error);
-      return { discoPercent: 0, redPercent: 0 };
+    const diskResultArray = diskRes.data?.data?.result;
+    const netResultArray = netRes.data?.data?.result;
+
+    let discoPercent = 0;
+    if (diskResultArray && diskResultArray.length > 0) {
+      discoPercent = parseFloat(diskResultArray[0].value[1]);
     }
+
+    let redBytesPorSegundo = 0;
+    if (netResultArray && netResultArray.length > 0) {
+      redBytesPorSegundo = parseFloat(netResultArray[0].value[1]);
+    }
+
+    const maxNetworkBytes = 125000000; 
+    const redPercent = (redBytesPorSegundo / maxNetworkBytes) * 100;
+    console.log(`[Debug] Tráfico real network: ${redBytesPorSegundo} bytes/segundo`);
+    return { 
+      discoPercent: Math.min(Math.round(discoPercent), 100), 
+      redPercent: Math.min(Math.round(redPercent), 100) 
+    };
+
+  } catch (error: any) {
+    console.error(`[K8s Monitor] Error leyendo Prometheus para Disco/Red:`, error.message || error);
+    return { discoPercent: 0, redPercent: 0 };
   }
+}
 
   private parseDiskMetrics(metricsText: string): number {
     const availMatch = metricsText.match(/node_filesystem_avail_bytes\{[^}]*mountpoint="\/"[^}]*\}\s+(\d+)/);
