@@ -87,13 +87,17 @@ export class MonitoringService {
         
         console.log(`[K8s] Nodo: ${nodeName} | CPU: ${cpuPercent}% | RAM: ${ramPercent}% | Disco: ${discoPercent}% | Red: ${redPercent}%`);
 
-        await this.updateServerMetricsInDatabase(nodeName, cpuPercent, ramPercent, discoPercent, redPercent);
+        const serverId = await this.updateServerMetricsInDatabase(nodeName, cpuPercent, ramPercent, discoPercent, redPercent);
 
-        if (cpuPercent >= config.cpuThreshold) {
-          await this.triggerAlert(1, nodeName, 'CPU', cpuPercent, config.cpuThreshold);
-        }
-        if (ramPercent >= config.ramThreshold) {
-          await this.triggerAlert(1, nodeName, 'RAM', ramPercent, config.ramThreshold);
+        if (serverId) {
+          if (cpuPercent >= config.cpuThreshold) {
+            await this.triggerAlert(serverId, nodeName, 'CPU', cpuPercent, config.cpuThreshold);
+          }
+          if (ramPercent >= config.ramThreshold) {
+            await this.triggerAlert(serverId, nodeName, 'RAM', ramPercent, config.ramThreshold);
+          }
+        } else {
+          console.warn(`[K8s Monitor] No se pudo validar alertas: El nodo ${nodeName} no retornó un ID válido en la BD.`);
         }
       }
     } catch (error: any) {
@@ -206,6 +210,7 @@ export class MonitoringService {
           red
         });
         console.log(`[K8s Monitor] Métricas actualizadas en DB para servidor ${server.id} (${nodeName})`);
+        return server.id!;
       } else {
         const { ServerEntity } = await import('../entities/server.entity');
         const newServer = new ServerEntity({
@@ -220,6 +225,7 @@ export class MonitoringService {
         
         server = await this.serverRepo.create(newServer);
         console.log(`[K8s Monitor] Servidor creado en DB para nodo ${nodeName} (ID: ${server.id})`);
+        return server.id!;
       }
     } catch (error) {
       console.error(`[K8s Monitor] Error actualizando métricas en DB para ${nodeName}:`, error);
