@@ -5,6 +5,13 @@ import { JwtUtil } from '../../utils/jwt.util';
 import { UserRole } from '../../enums/userRole.enum';
 import { UserPublicEntity } from '../entities/userPublic.entity';
 
+export type UpdateUserForApiInput = {
+  nombre?: string;
+  correo?: string;
+  rol?: UserRole;
+  plainPassword?: string;
+};
+
 export class UserService {
   constructor(private readonly userRepository: IUserRepository) {}
 
@@ -78,5 +85,76 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async updateUserForApi(
+    authorization: string | undefined,
+    id: number,
+    input: UpdateUserForApiInput
+  ): Promise<UserPublicEntity> {
+    const claims = JwtUtil.verifyBearerAuthorization(authorization);
+    const existing = await this.getByIdOrThrow(id);
+    const isAdmin = claims.rol === UserRole.Admin;
+    const isOwner = claims.idUsuario === id;
+
+    if (!isAdmin && !isOwner) {
+      throw new Error('No autorizado');
+    }
+
+    if (!isAdmin && input.rol !== undefined && input.rol !== existing.rol) {
+      throw new Error('No autorizado');
+    }
+
+    if (input.correo !== undefined && input.correo !== existing.correo) {
+      const withEmail = await this.userRepository.findByEmail(input.correo);
+      if (withEmail !== null && withEmail.idUsuario !== id) {
+        throw new Error('El correo ya está registrado');
+      }
+    }
+
+    const partial: Partial<UserEntity> = {};
+    if (input.nombre !== undefined) {
+      partial.nombre = input.nombre;
+    }
+    if (input.correo !== undefined) {
+      partial.correo = input.correo;
+    }
+    if (isAdmin && input.rol !== undefined) {
+      partial.rol = input.rol;
+    }
+
+    if (input.plainPassword !== undefined) {
+      const trimmed = input.plainPassword.trim();
+      if (trimmed.length > 0) {
+        partial.contrasena = await CryptoUtil.hashPassword(trimmed);
+      }
+    }
+
+    if (Object.keys(partial).length === 0) {
+      return this.toPublicEntity(existing);
+    }
+
+    const updated = await this.userRepository.update(id, partial);
+    return this.toPublicEntity(updated);
+  }
+
+  async deleteUserForApi(authorization: string | undefined, id: number): Promise<void> {
+    const claims = JwtUtil.verifyBearerAuthorization(authorization);
+    if (claims.rol !== UserRole.Admin) {
+      throw new Error('No autorizado');
+    }
+    if (claims.idUsuario === id) {
+      throw new Error('No se puede eliminar el propio usuario');
+    }
+    await this.getByIdOrThrow(id);
+    try {
+      await this.userRepository.delete(id);
+    } catch (error: unknown) {
+      const code = typeof error === 'object' && error !== null ? (error as { code?: string }).code : undefined;
+      if (code === 'P2003') {
+        throw new Error('No se puede eliminar el usuario: existen registros asociados');
+      }
+      throw error;
+    }
   }
 }
