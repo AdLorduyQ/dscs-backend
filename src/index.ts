@@ -66,6 +66,8 @@ app.get('/api/servers/:id/alerts/active', alertController.getActiveAlerts);
 app.patch('/api/alerts/:id/resolve', alertController.resolveAlert);
 app.get('/api/auth/me', authController.me);
 app.get('/api/users', userController.getAll);
+app.put('/api/users/:id', userController.update);
+app.delete('/api/users/:id', userController.remove);
 app.get('/api/users/:id', userController.getById);
 
 
