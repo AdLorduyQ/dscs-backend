@@ -5,6 +5,7 @@ import { AlertService } from './alert.service';
 import { IWebSocketService } from '../../interfaces/services/iWebSocketService.interface';
 import { AlertEntity } from '../entities/alert.entity';
 import { SlackUtil } from '../../utils/slack.util';
+import { TelegramUtil } from '../../utils/telegram.util';
 import axios from 'axios';
 
 interface NodeMetrics {
@@ -265,8 +266,10 @@ export class MonitoringService {
   }
 
   async sendSlackNotification(recurso: 'CPU' | 'RAM', serverName: string, valor: number, umbral: number) {
+    const mensaje = `⚠️ ALERTA CRÍTICA: ${recurso} en ${valor}% (Límite: ${umbral}%) - Nodo: ${serverName}`;
     console.log(`[Slack] Notificación enviada: ${recurso} en ${serverName}`);
-    await SlackUtil.send(`⚠️ ALERTA CRÍTICA: ${recurso} en ${valor}% (Límite: ${umbral}%) - Nodo: ${serverName}`);
+    await SlackUtil.send(mensaje);
+    await TelegramUtil.send(mensaje);
   }
 
 }
