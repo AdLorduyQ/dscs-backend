@@ -19,6 +19,7 @@ import { createServer } from 'http';
 import { SocketIoService } from './infrastructure/websockets/socket.io.service';
 import { MonitoringService } from './core/services/monitoring.service';
 import { UserController } from './infrastructure/controllers/user.controller';
+import { TelegramBotService } from './core/services/telegram.bot.service';
 
 const app = express();
 const httpServer = createServer(app);
@@ -49,9 +50,11 @@ const monitoringService = new MonitoringService(
   webSocketService
 );
 const userController = new UserController(userService);
+const telegramBot = new TelegramBotService(serverService, alertService, configService);
 
 
 monitoringService.startMonitoring();
+telegramBot.startPolling();
 
 
 app.post('/api/auth/login', authController.login);
