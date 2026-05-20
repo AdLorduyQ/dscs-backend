@@ -1,6 +1,6 @@
-import { ServerService } from '../services/server.service';
-import { AlertService } from '../services/alert.service';
-import { ConfigService } from '../services/config.service';
+import { ServerService } from './server.service';
+import { AlertService } from './alert.service';
+import { ConfigService } from './config.service';
 import { TelegramUtil } from '../../utils/telegram.util';
 
 interface TelegramUpdate {
