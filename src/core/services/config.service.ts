@@ -4,6 +4,7 @@ import { IConfigRepository } from '../../interfaces/repositories/iConfigReposito
 import { IChangelogRepository } from '../../interfaces/repositories/iChangelogRepository.interface';
 import { ChangelogType } from '../../enums/changelogType.enum';
 import { SlackUtil } from '../../utils/slack.util';
+import { TelegramUtil } from '../../utils/telegram.util';
 
 export class ConfigService {
   constructor(
@@ -33,6 +34,7 @@ export class ConfigService {
         id_usuario: userId
       }));
       await SlackUtil.send(`⚙️ CONFIGURACIÓN ACTUALIZADA: Umbral de CPU cambió de ${oldConfig.cpuThreshold}% a ${newData.cpuThreshold}%`);
+      await TelegramUtil.send(`⚙️ CONFIGURACIÓN ACTUALIZADA: Umbral de CPU cambió de ${oldConfig.cpuThreshold}% a ${newData.cpuThreshold}%`);
     }
 
     if (newData.ramThreshold && newData.ramThreshold !== oldConfig.ramThreshold) {
@@ -44,6 +46,7 @@ export class ConfigService {
         id_usuario: userId
       }));
       await SlackUtil.send(`⚙️ CONFIGURACIÓN ACTUALIZADA: Umbral de RAM cambió de ${oldConfig.ramThreshold}% a ${newData.ramThreshold}%`);
+      await TelegramUtil.send(`⚙️ CONFIGURACIÓN ACTUALIZADA: Umbral de RAM cambió de ${oldConfig.ramThreshold}% a ${newData.ramThreshold}%`);
     }
 
     return updatedConfig;
