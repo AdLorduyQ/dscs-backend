@@ -48,9 +48,9 @@ model Changelog {
   old         Json?
   new         Json?
   fecha       DateTime @default(now())
-  
-  id_usuario  Int
-  user        User     @relation(fields: [id_usuario], references: [id_usuario])
+
+  id_usuario  Int?
+  user        User?  @relation(fields: [id_usuario], references: [id_usuario])
 
   @@map("changelogs")
 }
