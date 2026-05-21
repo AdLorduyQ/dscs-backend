@@ -98,3 +98,8 @@ kubectl port-forward svc/prometheus-kube-prometheus-prometheus 9090:9090 -n moni
 kubectl port-forward svc/prometheus-kube-prometheus-alertmanager 9093:9093 -n monitoring
 ```
 
+## ChatBot Telegram
+
+You can access the Telegram chatbot here:
+
+[DSCS Telegram Bot]([https://t.me/TU_LINK_AQUI](https://t.me/dscs_admin_bot))
